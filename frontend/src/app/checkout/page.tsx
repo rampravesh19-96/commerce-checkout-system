@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { formatPrice } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import { useCart } from "@/lib/cart";
 import {
   generateMockOrderId,
@@ -74,6 +75,7 @@ function validateForm(form: CheckoutForm) {
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { isHydrated: isAuthHydrated, user } = useAuth();
   const {
     appliedCoupon,
     cartItems,
@@ -85,8 +87,22 @@ export default function CheckoutPage() {
     totalItems,
     totalPriceInPaise,
   } = useCart();
-  const [form, setForm] = useState<CheckoutForm>(initialFormState);
+  const [form, setForm] = useState<CheckoutForm>({
+    ...initialFormState,
+    fullName: user?.name || "",
+    email: user?.email || "",
+  });
   const [errors, setErrors] = useState<CheckoutErrors>({});
+
+  useEffect(() => {
+    if (!isAuthHydrated) {
+      return;
+    }
+
+    if (!user) {
+      router.replace("/login?redirect=%2Fcheckout");
+    }
+  }, [isAuthHydrated, router, user]);
 
   const handleChange =
     (field: keyof CheckoutForm) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -143,7 +159,7 @@ export default function CheckoutPage() {
     router.push("/order-confirmation");
   };
 
-  if (!isHydrated) {
+  if (!isHydrated || !isAuthHydrated) {
     return (
       <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
         <section className="mx-auto max-w-7xl px-6 py-10 sm:px-8 lg:px-10 lg:py-14">
@@ -164,6 +180,10 @@ export default function CheckoutPage() {
         </section>
       </main>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   if (cartItems.length === 0) {
