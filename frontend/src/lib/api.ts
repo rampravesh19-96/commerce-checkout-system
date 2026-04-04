@@ -43,6 +43,14 @@ export type ProductsResponse = {
   };
 };
 
+export type ProductSortOption = "newest" | "price_asc" | "price_desc" | "name_asc";
+
+type GetProductsParams = {
+  categorySlug?: string;
+  search?: string;
+  sort?: ProductSortOption;
+};
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") || "http://localhost:5000";
 
@@ -72,11 +80,19 @@ export function getCategories() {
   return fetchJson<Category[]>("/categories");
 }
 
-export function getProducts(categorySlug?: string) {
+export function getProducts(options: GetProductsParams = {}) {
   const params = new URLSearchParams();
 
-  if (categorySlug) {
-    params.set("category", categorySlug);
+  if (options.categorySlug) {
+    params.set("category", options.categorySlug);
+  }
+
+  if (options.search) {
+    params.set("search", options.search);
+  }
+
+  if (options.sort && options.sort !== "newest") {
+    params.set("sort", options.sort);
   }
 
   const query = params.toString();

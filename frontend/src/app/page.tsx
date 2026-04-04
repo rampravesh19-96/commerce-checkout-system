@@ -3,12 +3,28 @@
 import { useEffect, useRef, useState } from "react";
 import { CategoryFilter } from "@/components/category-filter";
 import { ProductCard } from "@/components/product-card";
-import { Category, Product, getCategories, getProducts } from "@/lib/api";
+import {
+  Category,
+  Product,
+  ProductSortOption,
+  getCategories,
+  getProducts,
+} from "@/lib/api";
+
+const SORT_OPTIONS: Array<{ label: string; value: ProductSortOption }> = [
+  { label: "Newest", value: "newest" },
+  { label: "Price: Low to High", value: "price_asc" },
+  { label: "Price: High to Low", value: "price_desc" },
+  { label: "Name: A to Z", value: "name_asc" },
+];
 
 export default function Home() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selectedSort, setSelectedSort] = useState<ProductSortOption>("newest");
   const [retryCount, setRetryCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isProductsLoading, setIsProductsLoading] = useState(false);
@@ -31,6 +47,16 @@ export default function Home() {
   }, [retryCount]);
 
   useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedSearch(searchInput.trim());
+    }, 350);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [searchInput]);
+
+  useEffect(() => {
     async function loadProducts() {
       if (!hasLoadedProducts.current) {
         setIsLoading(true);
@@ -39,7 +65,11 @@ export default function Home() {
       }
 
       try {
-        const productResponse = await getProducts(selectedCategory);
+        const productResponse = await getProducts({
+          categorySlug: selectedCategory,
+          search: debouncedSearch,
+          sort: selectedSort,
+        });
         setProducts(productResponse.data);
         setProductsError("");
         hasLoadedProducts.current = true;
@@ -52,7 +82,7 @@ export default function Home() {
     }
 
     void loadProducts();
-  }, [selectedCategory, retryCount]);
+  }, [selectedCategory, debouncedSearch, selectedSort, retryCount]);
 
   const errorMessage = categoriesError || productsError;
 
@@ -83,7 +113,7 @@ export default function Home() {
             <div>
               <h2 className="text-lg font-semibold text-slate-900">Shop by category</h2>
               <p className="mt-1 text-sm text-slate-600">
-                Filter products with a simple, fast catalog experience.
+                Search, filter, and sort products with a simple catalog experience.
               </p>
             </div>
             {isProductsLoading ? (
@@ -91,12 +121,48 @@ export default function Home() {
             ) : null}
           </div>
 
-          <CategoryFilter
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
-            disabled={isLoading || isProductsLoading}
-          />
+          <div className="space-y-4">
+            <div className="grid gap-4 lg:grid-cols-[1fr_220px]">
+              <div>
+                <label htmlFor="catalog-search" className="mb-2 block text-sm font-medium text-slate-700">
+                  Search products
+                </label>
+                <input
+                  id="catalog-search"
+                  type="search"
+                  value={searchInput}
+                  onChange={(event) => setSearchInput(event.target.value)}
+                  placeholder="Search by name, brand, or keyword"
+                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="catalog-sort" className="mb-2 block text-sm font-medium text-slate-700">
+                  Sort by
+                </label>
+                <select
+                  id="catalog-sort"
+                  value={selectedSort}
+                  onChange={(event) => setSelectedSort(event.target.value as ProductSortOption)}
+                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+                >
+                  {SORT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <CategoryFilter
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+              disabled={isLoading || isProductsLoading}
+            />
+          </div>
         </div>
 
         {errorMessage ? (
@@ -136,19 +202,24 @@ export default function Home() {
           <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
             <h2 className="text-2xl font-semibold text-slate-900">No products found</h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              There are no products in this category yet. Try switching back to all
-              products.
+              No products matched your current search and filters. Try a different
+              keyword or switch back to all products.
             </p>
           </div>
         ) : null}
 
         {!errorMessage && !isLoading && products.length > 0 ? (
           <div className="space-y-5">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-slate-600">
                 Showing <span className="font-semibold text-slate-900">{products.length}</span>{" "}
                 products
               </p>
+              {(debouncedSearch || selectedCategory || selectedSort !== "newest") && (
+                <p className="text-sm text-slate-500">
+                  {debouncedSearch ? `Search: "${debouncedSearch}"` : "Browsing catalog"}
+                </p>
+              )}
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">

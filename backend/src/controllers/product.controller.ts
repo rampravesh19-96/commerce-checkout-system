@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 
@@ -17,6 +18,17 @@ export async function getProducts(req: Request, res: Response) {
     const limit = Math.min(parsePositiveInt(req.query.limit as string | undefined, 12), 50);
     const search = (req.query.search as string | undefined)?.trim();
     const category = (req.query.category as string | undefined)?.trim();
+    const sort = (req.query.sort as string | undefined)?.trim();
+
+    let orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: "desc" };
+
+    if (sort === "price_asc") {
+      orderBy = { priceInPaise: "asc" };
+    } else if (sort === "price_desc") {
+      orderBy = { priceInPaise: "desc" };
+    } else if (sort === "name_asc") {
+      orderBy = { name: "asc" };
+    }
 
     const where = {
       isActive: true,
@@ -55,7 +67,7 @@ export async function getProducts(req: Request, res: Response) {
         where,
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { createdAt: "desc" },
+        orderBy,
         include: {
           category: {
             select: {
