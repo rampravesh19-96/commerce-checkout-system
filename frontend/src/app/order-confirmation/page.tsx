@@ -1,44 +1,91 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { formatPrice } from "@/lib/api";
-import {
-  clearOrderConfirmation,
-  getOrderConfirmation,
-  type OrderConfirmationData,
-} from "@/lib/order-confirmation";
+import { clearOrderConfirmation } from "@/lib/order-confirmation";
+
+const ORDER_CONFIRMATION_STORAGE_KEY = "commerce-checkout-order-confirmation";
+
+type OrderConfirmationData = {
+  orderId: string;
+  createdAt: string;
+  customer: {
+    fullName: string;
+    email: string;
+    phone: string;
+  };
+  shippingAddress: {
+    addressLine: string;
+    city: string;
+    state: string;
+    pincode: string;
+  };
+  items: Array<{
+    productId: number;
+    name: string;
+    image: string;
+    unitPriceInPaise: number;
+    quantity: number;
+  }>;
+  pricing: {
+    itemTotalInPaise: number;
+    deliveryFeeInPaise: number;
+    grandTotalInPaise: number;
+  };
+};
+
+function subscribe(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
+function getSnapshot() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return window.sessionStorage.getItem(ORDER_CONFIRMATION_STORAGE_KEY);
+}
 
 export default function OrderConfirmationPage() {
-  const [confirmation, setConfirmation] = useState<OrderConfirmationData | null>(null);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const rawConfirmation = useSyncExternalStore(subscribe, getSnapshot, () => null);
 
-  useEffect(() => {
-    const data = getOrderConfirmation();
-    setConfirmation(data);
-    setIsHydatedSafe(setIsHydrated);
-  }, []);
+  const confirmation = useMemo<OrderConfirmationData | null>(() => {
+    if (!rawConfirmation) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(rawConfirmation) as OrderConfirmationData;
+    } catch {
+      return null;
+    }
+  }, [rawConfirmation]);
 
   const handleContinueShopping = () => {
     clearOrderConfirmation();
   };
 
-  if (!isHydrated) {
+  if (!rawConfirmation) {
     return (
       <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
-        <section className="mx-auto max-w-7xl px-6 py-10 sm:px-8 lg:px-10 lg:py-14">
-          <div className="mb-8 h-10 w-64 animate-pulse rounded bg-slate-200" />
-          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="space-y-4 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
-              {Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-200" />
-              ))}
-            </div>
-            <div className="space-y-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="h-6 w-32 animate-pulse rounded bg-slate-200" />
-              <div className="h-20 animate-pulse rounded-2xl bg-slate-200" />
-            </div>
-          </div>
+        <section className="mx-auto max-w-4xl px-6 py-16 text-center sm:px-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">
+            Order Confirmation
+          </p>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">
+            No recent order found
+          </h1>
+          <p className="mt-4 text-base leading-7 text-slate-600">
+            Complete checkout to see your order confirmation details here.
+          </p>
+          <Link
+            href="/"
+            className="mt-8 inline-flex rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+          >
+            Continue shopping
+          </Link>
         </section>
       </main>
     );
@@ -52,10 +99,10 @@ export default function OrderConfirmationPage() {
             Order Confirmation
           </p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">
-            No recent order found
+            Invalid confirmation data
           </h1>
           <p className="mt-4 text-base leading-7 text-slate-600">
-            Complete checkout to see your order confirmation details here.
+            We could not read the mock confirmation details from session storage.
           </p>
           <Link
             href="/"
@@ -157,8 +204,4 @@ export default function OrderConfirmationPage() {
       </section>
     </main>
   );
-}
-
-function setIsHydatedSafe(setter: React.Dispatch<React.SetStateAction<boolean>>) {
-  setter(true);
 }
