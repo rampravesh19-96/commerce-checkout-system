@@ -8,8 +8,10 @@ import {
   useMemo,
   useState,
 } from "react";
+import { AppliedCoupon, findCouponByCode, getPricingSummary } from "@/lib/pricing";
 
 const CART_STORAGE_KEY = "commerce-checkout-cart";
+const CART_COUPON_STORAGE_KEY = "commerce-checkout-coupon";
 
 export type CartItem = {
   productId: number;
@@ -29,32 +31,46 @@ type AddToCartInput = {
 
 type CartContextValue = {
   cartItems: CartItem[];
+  appliedCoupon: AppliedCoupon | null;
   isHydrated: boolean;
   addItem: (item: AddToCartInput) => void;
   increaseQuantity: (productId: number) => void;
   decreaseQuantity: (productId: number) => void;
   removeItem: (productId: number) => void;
   clearCart: () => void;
+  applyCoupon: (couponCode: string) => { success: boolean; message: string };
+  removeCoupon: () => void;
   totalItems: number;
   totalPriceInPaise: number;
+  discountInPaise: number;
+  deliveryFeeInPaise: number;
+  grandTotalInPaise: number;
 };
 
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
     try {
       const storedCart = window.localStorage.getItem(CART_STORAGE_KEY);
+      const storedCoupon = window.localStorage.getItem(CART_COUPON_STORAGE_KEY);
 
       if (storedCart) {
         const parsedCart = JSON.parse(storedCart) as CartItem[];
         setCartItems(parsedCart);
       }
+
+      if (storedCoupon) {
+        const parsedCoupon = JSON.parse(storedCoupon) as AppliedCoupon;
+        setAppliedCoupon(parsedCoupon);
+      }
     } catch {
       window.localStorage.removeItem(CART_STORAGE_KEY);
+      window.localStorage.removeItem(CART_COUPON_STORAGE_KEY);
     } finally {
       setIsHydrated(true);
     }
@@ -66,7 +82,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
-  }, [cartItems, isHydrated]);
+    window.localStorage.setItem(CART_COUPON_STORAGE_KEY, JSON.stringify(appliedCoupon));
+  }, [appliedCoupon, cartItems, isHydrated]);
 
   const value = useMemo<CartContextValue>(() => {
     const addItem = (item: AddToCartInput) => {
@@ -125,6 +142,44 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     const clearCart = () => {
       setCartItems([]);
+      setAppliedCoupon(null);
+    };
+
+    const applyCoupon = (couponCode: string) => {
+      const coupon = findCouponByCode(couponCode);
+
+      if (!coupon) {
+        return {
+          success: false,
+          message: "That coupon code is not valid for this demo checkout.",
+        };
+      }
+
+      const nextCoupon: AppliedCoupon =
+        coupon.type === "flat"
+          ? {
+              code: coupon.code,
+              label: coupon.label,
+              type: coupon.type,
+              amountInPaise: coupon.amountInPaise,
+            }
+          : {
+              code: coupon.code,
+              label: coupon.label,
+              type: coupon.type,
+              percentage: coupon.percentage,
+            };
+
+      setAppliedCoupon(nextCoupon);
+
+      return {
+        success: true,
+        message: `${coupon.code} applied successfully.`,
+      };
+    };
+
+    const removeCoupon = () => {
+      setAppliedCoupon(null);
     };
 
     const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -132,19 +187,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
       (sum, item) => sum + item.unitPriceInPaise * item.quantity,
       0,
     );
+    const pricingSummary = getPricingSummary(totalPriceInPaise, appliedCoupon);
 
     return {
       cartItems,
+      appliedCoupon,
       isHydrated,
       addItem,
       increaseQuantity,
       decreaseQuantity,
       removeItem,
       clearCart,
+      applyCoupon,
+      removeCoupon,
       totalItems,
       totalPriceInPaise,
+      discountInPaise: pricingSummary.discountInPaise,
+      deliveryFeeInPaise: pricingSummary.deliveryFeeInPaise,
+      grandTotalInPaise: pricingSummary.grandTotalInPaise,
     };
-  }, [cartItems, isHydrated]);
+  }, [appliedCoupon, cartItems, isHydrated]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

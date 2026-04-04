@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useState } from "react";
 import { formatPrice } from "@/lib/api";
 import { useCart } from "@/lib/cart";
 import {
-  DELIVERY_FEE_IN_PAISE,
   generateMockOrderId,
   saveOrderConfirmation,
 } from "@/lib/order-confirmation";
@@ -75,14 +74,19 @@ function validateForm(form: CheckoutForm) {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cartItems, clearCart, isHydrated, totalItems, totalPriceInPaise } = useCart();
+  const {
+    appliedCoupon,
+    cartItems,
+    clearCart,
+    deliveryFeeInPaise,
+    discountInPaise,
+    grandTotalInPaise,
+    isHydrated,
+    totalItems,
+    totalPriceInPaise,
+  } = useCart();
   const [form, setForm] = useState<CheckoutForm>(initialFormState);
   const [errors, setErrors] = useState<CheckoutErrors>({});
-
-  const grandTotalInPaise = useMemo(
-    () => totalPriceInPaise + DELIVERY_FEE_IN_PAISE,
-    [totalPriceInPaise],
-  );
 
   const handleChange =
     (field: keyof CheckoutForm) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -123,10 +127,12 @@ export default function CheckoutPage() {
         state: form.state.trim(),
         pincode: form.pincode.trim(),
       },
+      coupon: appliedCoupon,
       items: cartItems,
       pricing: {
         itemTotalInPaise: totalPriceInPaise,
-        deliveryFeeInPaise: DELIVERY_FEE_IN_PAISE,
+        discountInPaise,
+        deliveryFeeInPaise,
         grandTotalInPaise,
       },
     };
@@ -387,14 +393,27 @@ export default function CheckoutPage() {
                 <span>{formatPrice(totalPriceInPaise)}</span>
               </div>
               <div className="flex items-center justify-between text-sm text-slate-600">
+                <span>Discount</span>
+                <span className="font-medium text-emerald-700">- {formatPrice(discountInPaise)}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm text-slate-600">
                 <span>Delivery fee</span>
-                <span>{formatPrice(DELIVERY_FEE_IN_PAISE)}</span>
+                <span>{formatPrice(deliveryFeeInPaise)}</span>
               </div>
               <div className="flex items-center justify-between border-t border-slate-200 pt-3 text-lg font-semibold text-slate-950">
                 <span>Grand total</span>
                 <span>{formatPrice(grandTotalInPaise)}</span>
               </div>
             </div>
+
+            {appliedCoupon ? (
+              <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                <p className="text-sm font-medium text-emerald-800">
+                  Applied coupon: {appliedCoupon.code}
+                </p>
+                <p className="mt-1 text-xs text-emerald-700">{appliedCoupon.label}</p>
+              </div>
+            ) : null}
           </aside>
         </div>
       </section>

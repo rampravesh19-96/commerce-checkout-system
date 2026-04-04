@@ -2,19 +2,43 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { formatPrice } from "@/lib/api";
 import { useCart } from "@/lib/cart";
 
 export default function CartPage() {
   const {
+    appliedCoupon,
+    applyCoupon,
     cartItems,
     decreaseQuantity,
+    deliveryFeeInPaise,
+    discountInPaise,
+    grandTotalInPaise,
     increaseQuantity,
     isHydrated,
     removeItem,
+    removeCoupon,
     totalItems,
     totalPriceInPaise,
   } = useCart();
+  const [couponInput, setCouponInput] = useState("");
+  const [couponMessage, setCouponMessage] = useState("");
+  const [couponError, setCouponError] = useState("");
+
+  const handleApplyCoupon = () => {
+    const result = applyCoupon(couponInput);
+
+    if (result.success) {
+      setCouponMessage(result.message);
+      setCouponError("");
+      setCouponInput("");
+      return;
+    }
+
+    setCouponError(result.message);
+    setCouponMessage("");
+  };
 
   if (!isHydrated) {
     return (
@@ -150,13 +174,70 @@ export default function CartPage() {
 
           <aside className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">Cart summary</h2>
+            <div className="mt-6 rounded-2xl bg-slate-50 p-4">
+              <label htmlFor="coupon" className="mb-2 block text-sm font-medium text-slate-700">
+                Coupon code
+              </label>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <input
+                  id="coupon"
+                  type="text"
+                  value={couponInput}
+                  onChange={(event) => setCouponInput(event.target.value.toUpperCase())}
+                  placeholder="Enter coupon code"
+                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyCoupon}
+                  className="rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+                >
+                  Apply
+                </button>
+              </div>
+
+              {appliedCoupon ? (
+                <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                  <div>
+                    <p className="text-sm font-medium text-emerald-800">{appliedCoupon.code}</p>
+                    <p className="text-xs text-emerald-700">{appliedCoupon.label}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      removeCoupon();
+                      setCouponMessage("");
+                    }}
+                    className="text-sm font-medium text-emerald-800 transition hover:text-emerald-900"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : null}
+
+              {couponMessage ? <p className="mt-3 text-sm text-emerald-700">{couponMessage}</p> : null}
+              {couponError ? <p className="mt-3 text-sm text-red-600">{couponError}</p> : null}
+            </div>
+
             <div className="mt-6 flex items-center justify-between text-sm text-slate-600">
               <span>Items</span>
               <span>{totalItems}</span>
             </div>
-            <div className="mt-3 flex items-center justify-between text-lg font-semibold text-slate-950">
-              <span>Total</span>
+            <div className="mt-3 flex items-center justify-between text-sm text-slate-600">
+              <span>Item total</span>
               <span>{formatPrice(totalPriceInPaise)}</span>
+            </div>
+            <div className="mt-3 flex items-center justify-between text-sm text-slate-600">
+              <span>Discount</span>
+              <span className="font-medium text-emerald-700">- {formatPrice(discountInPaise)}</span>
+            </div>
+            <div className="mt-3 flex items-center justify-between text-sm text-slate-600">
+              <span>Delivery fee</span>
+              <span>{formatPrice(deliveryFeeInPaise)}</span>
+            </div>
+            <div className="mt-3 flex items-center justify-between border-t border-slate-200 pt-3 text-lg font-semibold text-slate-950">
+              <span>Grand total</span>
+              <span>{formatPrice(grandTotalInPaise)}</span>
             </div>
             <Link
               href="/checkout"

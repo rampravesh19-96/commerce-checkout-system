@@ -1,7 +1,7 @@
 import { CartItem } from "@/lib/cart";
+import { AppliedCoupon } from "@/lib/pricing";
 
 const ORDER_CONFIRMATION_STORAGE_KEY = "commerce-checkout-order-confirmation";
-export const DELIVERY_FEE_IN_PAISE = 9900;
 
 export type ConfirmationCustomer = {
   fullName: string;
@@ -21,9 +21,11 @@ export type OrderConfirmationData = {
   createdAt: string;
   customer: ConfirmationCustomer;
   shippingAddress: ConfirmationShippingAddress;
+  coupon: AppliedCoupon | null;
   items: CartItem[];
   pricing: {
     itemTotalInPaise: number;
+    discountInPaise: number;
     deliveryFeeInPaise: number;
     grandTotalInPaise: number;
   };
