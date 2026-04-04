@@ -96,6 +96,17 @@ This project is designed as a strong portfolio piece for **frontend-focused full
 - `POST /auth/signup`
 - `POST /auth/login`
 
+## Screenshots
+
+### Home / Catalog
+![Home catalog](./screenshots/home.PNG)
+
+### Checkout
+![Checkout](./screenshots/checkout.PNG)
+
+### My Orders
+![My Orders](./screenshots/orders.PNG)
+
 ## Local Setup
 
 ### 1. Clone the repository
