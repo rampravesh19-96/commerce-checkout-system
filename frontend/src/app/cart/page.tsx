@@ -159,8 +159,14 @@ export default function CartPage() {
               <span>{formatPrice(totalPriceInPaise)}</span>
             </div>
             <Link
+              href="/checkout"
+              className="mt-6 inline-flex w-full justify-center rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+            >
+              Proceed to checkout
+            </Link>
+            <Link
               href="/"
-              className="mt-6 inline-flex w-full justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400"
+              className="mt-3 inline-flex w-full justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400"
             >
               Continue shopping
             </Link>
