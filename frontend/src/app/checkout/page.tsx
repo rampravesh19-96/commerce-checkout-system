@@ -94,6 +94,8 @@ export default function CheckoutPage() {
     email: user?.email || "",
   });
   const [errors, setErrors] = useState<CheckoutErrors>({});
+  const [hasEditedFullName, setHasEditedFullName] = useState(false);
+  const [hasEditedEmail, setHasEditedEmail] = useState(false);
 
   useEffect(() => {
     if (!isAuthHydrated) {
@@ -109,6 +111,14 @@ export default function CheckoutPage() {
     (field: keyof CheckoutForm) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const value = event.target.value;
 
+      if (field === "fullName") {
+        setHasEditedFullName(true);
+      }
+
+      if (field === "email") {
+        setHasEditedEmail(true);
+      }
+
       setForm((current) => ({
         ...current,
         [field]: value,
@@ -123,7 +133,13 @@ export default function CheckoutPage() {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const validationErrors = validateForm(form);
+const formToSubmit: CheckoutForm = {
+  ...form,
+  fullName: hasEditedFullName ? form.fullName : user?.name ?? form.fullName,
+  email: hasEditedEmail ? form.email : user?.email ?? form.email,
+};
+
+    const validationErrors = validateForm(formToSubmit);
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -135,19 +151,19 @@ export default function CheckoutPage() {
       createdAt: new Date().toISOString(),
       status: "Confirmed" as const,
       user: {
-        email: user.email,
-        name: user.name,
+        email: user?.email ?? formToSubmit.email,
+        name: user?.name ?? formToSubmit.fullName,
       },
       customer: {
-        fullName: form.fullName.trim(),
-        email: form.email.trim(),
-        phone: form.phone.trim(),
+        fullName: formToSubmit.fullName.trim(),
+        email: formToSubmit.email.trim(),
+        phone: formToSubmit.phone.trim(),
       },
       shippingAddress: {
-        addressLine: form.addressLine.trim(),
-        city: form.city.trim(),
-        state: form.state.trim(),
-        pincode: form.pincode.trim(),
+        addressLine: formToSubmit.addressLine.trim(),
+        city: formToSubmit.city.trim(),
+        state: formToSubmit.state.trim(),
+        pincode: formToSubmit.pincode.trim(),
       },
       coupon: appliedCoupon,
       items: cartItems,
@@ -193,13 +209,14 @@ export default function CheckoutPage() {
     return null;
   }
 
+  const displayFullName = hasEditedFullName ? form.fullName : user.name;
+  const displayEmail = hasEditedEmail ? form.email : user.email;
+
   if (cartItems.length === 0) {
     return (
       <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
         <section className="mx-auto max-w-4xl px-6 py-16 text-center sm:px-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">
-            Checkout
-          </p>
+          <p className="page-eyebrow">Checkout</p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">
             Your cart is empty
           </h1>
@@ -209,13 +226,13 @@ export default function CheckoutPage() {
           <div className="mt-8 flex justify-center gap-3">
             <Link
               href="/"
-              className="rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+              className="btn-primary"
             >
               Browse catalog
             </Link>
             <Link
               href="/cart"
-              className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400"
+              className="btn-secondary"
             >
               Go to cart
             </Link>
@@ -227,7 +244,7 @@ export default function CheckoutPage() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
-      <section className="mx-auto max-w-7xl px-6 py-10 sm:px-8 lg:px-10 lg:py-14">
+      <section className="page-shell">
         <div className="mb-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">
@@ -250,7 +267,8 @@ export default function CheckoutPage() {
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-slate-900">Shipping address</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Fill in the delivery details for this mock checkout flow.
+                Fill in the delivery details for this mock checkout flow. Your account
+                name and email are prefilled for convenience.
               </p>
             </div>
 
@@ -262,9 +280,9 @@ export default function CheckoutPage() {
                 <input
                   id="fullName"
                   type="text"
-                  value={form.fullName}
+                  value={displayFullName}
                   onChange={handleChange("fullName")}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+                  className="input-field"
                   placeholder="Aarav Sharma"
                 />
                 {errors.fullName ? (
@@ -279,9 +297,9 @@ export default function CheckoutPage() {
                 <input
                   id="email"
                   type="email"
-                  value={form.email}
+                  value={displayEmail}
                   onChange={handleChange("email")}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+                  className="input-field"
                   placeholder="aarav@example.com"
                 />
                 {errors.email ? (
@@ -298,7 +316,7 @@ export default function CheckoutPage() {
                   type="tel"
                   value={form.phone}
                   onChange={handleChange("phone")}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+                  className="input-field"
                   placeholder="9876543210"
                 />
                 {errors.phone ? (
@@ -318,7 +336,7 @@ export default function CheckoutPage() {
                   value={form.addressLine}
                   onChange={handleChange("addressLine")}
                   rows={4}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+                  className="textarea-field"
                   placeholder="Flat 12B, Park View Residency, MG Road"
                 />
                 {errors.addressLine ? (
@@ -335,7 +353,7 @@ export default function CheckoutPage() {
                   type="text"
                   value={form.city}
                   onChange={handleChange("city")}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+                  className="input-field"
                   placeholder="Bengaluru"
                 />
                 {errors.city ? (
@@ -352,7 +370,7 @@ export default function CheckoutPage() {
                   type="text"
                   value={form.state}
                   onChange={handleChange("state")}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+                  className="input-field"
                   placeholder="Karnataka"
                 />
                 {errors.state ? (
@@ -369,7 +387,7 @@ export default function CheckoutPage() {
                   type="text"
                   value={form.pincode}
                   onChange={handleChange("pincode")}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+                  className="input-field"
                   placeholder="560001"
                 />
                 {errors.pincode ? (
@@ -381,13 +399,13 @@ export default function CheckoutPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <button
                 type="submit"
-                className="rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+                className="btn-primary"
               >
                 Place Order
               </button>
               <Link
                 href="/cart"
-                className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400"
+                className="btn-secondary"
               >
                 Back to cart
               </Link>

@@ -73,7 +73,7 @@ export default function ProductDetailsPage() {
   if (isLoading) {
     return (
       <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
-        <section className="mx-auto max-w-7xl px-6 py-10 sm:px-8 lg:px-10 lg:py-14">
+        <section className="page-shell">
           <div className="mb-8 h-6 w-36 animate-pulse rounded bg-slate-200" />
           <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
             <div className="aspect-[4/3] animate-pulse rounded-[2rem] bg-slate-200" />
@@ -95,9 +95,7 @@ export default function ProductDetailsPage() {
     return (
       <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
         <section className="mx-auto max-w-4xl px-6 py-16 text-center sm:px-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">
-            Product Details
-          </p>
+          <p className="page-eyebrow">Product Details</p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">
             Product not found
           </h1>
@@ -107,7 +105,7 @@ export default function ProductDetailsPage() {
           </p>
           <Link
             href="/"
-            className="mt-8 inline-flex rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+            className="btn-primary mt-8"
           >
             Back to catalog
           </Link>
@@ -120,24 +118,24 @@ export default function ProductDetailsPage() {
     return (
       <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
         <section className="mx-auto max-w-4xl px-6 py-16 text-center sm:px-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">
-            Product Details
-          </p>
+          <p className="page-eyebrow">Product Details</p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">
             Something went wrong
           </h1>
-          <p className="mt-4 text-base leading-7 text-slate-600">{errorMessage}</p>
+          <p className="mt-4 text-base leading-7 text-slate-600">
+            {errorMessage} Please retry or head back to the catalog.
+          </p>
           <div className="mt-8 flex justify-center gap-3">
             <button
               type="button"
               onClick={() => setRetryCount((current) => current + 1)}
-              className="rounded-full bg-red-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-red-700"
+              className="btn-danger"
             >
               Try again
             </button>
             <Link
               href="/"
-              className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400"
+              className="btn-secondary"
             >
               Back to catalog
             </Link>
@@ -170,12 +168,12 @@ export default function ProductDetailsPage() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
-      <section className="mx-auto max-w-7xl px-6 py-10 sm:px-8 lg:px-10 lg:py-14">
+      <section className="page-shell">
         <Link
           href="/"
           className="mb-8 inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-slate-900"
         >
-          {"<"} Back to catalog
+          ← Back to catalog
         </Link>
 
         <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
@@ -192,9 +190,9 @@ export default function ProductDetailsPage() {
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
+          <div className="surface-card p-8">
             <div className="mb-6 flex flex-wrap items-center gap-3">
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+              <span className="pill-meta">
                 {product.category.name}
               </span>
               <span className={`rounded-full px-3 py-1 text-sm font-medium ${stockStatus.className}`}>
@@ -219,24 +217,24 @@ export default function ProductDetailsPage() {
                 type="button"
                 onClick={handleAddToCart}
                 disabled={!canAddToCart}
-                className={`rounded-full px-5 py-3 text-sm font-medium transition ${
+                className={`btn-primary ${
                   canAddToCart
-                    ? "bg-slate-900 text-white hover:bg-slate-800"
-                    : "cursor-not-allowed bg-slate-300 text-slate-600"
+                    ? ""
+                    : "cursor-not-allowed"
                 }`}
               >
                 Add to cart
               </button>
               <Link
                 href="/cart"
-                className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400"
+                className="btn-secondary"
               >
                 View cart
               </Link>
             </div>
 
             {isAddedToCart ? (
-              <p className="mt-3 text-sm font-medium text-emerald-700">
+              <p className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
                 Added to cart successfully.
               </p>
             ) : null}

@@ -42,9 +42,7 @@ export default function SignupPage() {
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
       <section className="mx-auto max-w-lg px-6 py-12 sm:px-8 lg:py-16">
         <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">
-            Sign Up
-          </p>
+          <p className="page-eyebrow">Sign Up</p>
           <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">
             Create your account
           </h1>
@@ -63,7 +61,7 @@ export default function SignupPage() {
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 required
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+                className="input-field"
                 placeholder="Aarav Sharma"
               />
             </div>
@@ -78,7 +76,7 @@ export default function SignupPage() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 required
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+                className="input-field"
                 placeholder="you@example.com"
               />
             </div>
@@ -94,7 +92,7 @@ export default function SignupPage() {
                 onChange={(event) => setPassword(event.target.value)}
                 required
                 minLength={6}
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+                className="input-field"
                 placeholder="Create a password"
               />
             </div>
@@ -108,11 +106,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`w-full rounded-full px-5 py-3 text-sm font-medium transition ${
-                isSubmitting
-                  ? "cursor-not-allowed bg-slate-300 text-slate-600"
-                  : "bg-slate-900 text-white hover:bg-slate-800"
-              }`}
+              className="btn-primary w-full"
             >
               {isSubmitting ? "Creating account..." : "Sign up"}
             </button>

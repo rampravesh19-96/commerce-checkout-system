@@ -12,7 +12,7 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <Link
       href={`/products/${product.id}`}
-      className="group block overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+      className="group block overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
     >
       <article>
         <div className="aspect-[4/3] bg-slate-100">
@@ -27,7 +27,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
         <div className="space-y-4 p-5">
           <div className="flex items-center justify-between gap-4">
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+            <span className="pill-meta">
               {product.category.name}
             </span>
             <span className="text-lg font-semibold text-slate-900">
@@ -38,6 +38,11 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="space-y-2">
             <h3 className="text-lg font-semibold text-slate-900">{product.name}</h3>
             <p className="line-clamp-3 text-sm leading-6 text-slate-600">{summary}</p>
+          </div>
+
+          <div className="flex items-center justify-between pt-1 text-sm font-medium text-slate-500 transition group-hover:text-slate-700">
+            <span>View details</span>
+            <span aria-hidden="true">→</span>
           </div>
         </div>
       </article>

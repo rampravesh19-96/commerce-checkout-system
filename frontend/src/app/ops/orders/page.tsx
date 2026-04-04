@@ -82,7 +82,7 @@ export default function OpsOrdersPage() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
-      <section className="mx-auto max-w-7xl px-6 py-10 sm:px-8 lg:px-10 lg:py-14">
+      <section className="page-shell">
         <div className="mb-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">
@@ -104,7 +104,7 @@ export default function OpsOrdersPage() {
               id="status-filter"
               value={selectedStatus}
               onChange={(event) => setSelectedStatus(event.target.value as "All" | OrderStatus)}
-              className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+              className="input-field"
             >
               <option value="All">All statuses</option>
               {ORDER_STATUSES.map((status) => (
@@ -117,14 +117,14 @@ export default function OpsOrdersPage() {
         </div>
 
         {filteredOrders.length === 0 ? (
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <div className="empty-state">
             <h2 className="text-2xl font-semibold text-slate-950">No orders for this filter</h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
               Try switching the status filter or place a few mock orders first.
             </p>
             <Link
               href="/"
-              className="mt-6 inline-flex rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+              className="btn-primary mt-6"
             >
               Continue shopping
             </Link>

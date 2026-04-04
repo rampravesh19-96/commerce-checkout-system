@@ -69,9 +69,7 @@ export default function CartPage() {
     return (
       <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
         <section className="mx-auto max-w-4xl px-6 py-16 text-center sm:px-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">
-            Shopping Cart
-          </p>
+          <p className="page-eyebrow">Shopping Cart</p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">
             Your cart is empty
           </h1>
@@ -80,7 +78,7 @@ export default function CartPage() {
           </p>
           <Link
             href="/"
-            className="mt-8 inline-flex rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+            className="btn-primary mt-8"
           >
             Continue shopping
           </Link>
@@ -91,7 +89,7 @@ export default function CartPage() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
-      <section className="mx-auto max-w-7xl px-6 py-10 sm:px-8 lg:px-10 lg:py-14">
+      <section className="page-shell">
         <div className="mb-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">
@@ -138,7 +136,7 @@ export default function CartPage() {
                     </div>
 
                     <div className="flex flex-col items-start gap-3 sm:items-end">
-                      <div className="flex items-center rounded-full border border-slate-300 bg-white">
+                  <div className="flex items-center rounded-full border border-slate-300 bg-white shadow-sm">
                         <button
                           type="button"
                           onClick={() => decreaseQuantity(item.productId)}
@@ -185,12 +183,12 @@ export default function CartPage() {
                   value={couponInput}
                   onChange={(event) => setCouponInput(event.target.value.toUpperCase())}
                   placeholder="Enter coupon code"
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+                  className="input-field"
                 />
                 <button
                   type="button"
                   onClick={handleApplyCoupon}
-                  className="rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+                  className="btn-primary"
                 >
                   Apply
                 </button>
@@ -215,8 +213,16 @@ export default function CartPage() {
                 </div>
               ) : null}
 
-              {couponMessage ? <p className="mt-3 text-sm text-emerald-700">{couponMessage}</p> : null}
-              {couponError ? <p className="mt-3 text-sm text-red-600">{couponError}</p> : null}
+              {couponMessage ? (
+                <p className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                  {couponMessage}
+                </p>
+              ) : null}
+              {couponError ? (
+                <p className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                  {couponError}
+                </p>
+              ) : null}
             </div>
 
             <div className="mt-6 flex items-center justify-between text-sm text-slate-600">
@@ -241,13 +247,13 @@ export default function CartPage() {
             </div>
             <Link
               href="/checkout"
-              className="mt-6 inline-flex w-full justify-center rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+              className="btn-primary mt-6 flex w-full"
             >
               Proceed to checkout
             </Link>
             <Link
               href="/"
-              className="mt-3 inline-flex w-full justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400"
+              className="btn-secondary mt-3 flex w-full"
             >
               Continue shopping
             </Link>

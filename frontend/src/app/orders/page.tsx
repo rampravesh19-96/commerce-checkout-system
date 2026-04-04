@@ -69,9 +69,7 @@ export default function OrdersPage() {
     return (
       <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
         <section className="mx-auto max-w-4xl px-6 py-16 text-center sm:px-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">
-            My Orders
-          </p>
+          <p className="page-eyebrow">My Orders</p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">
             No orders yet
           </h1>
@@ -80,7 +78,7 @@ export default function OrdersPage() {
           </p>
           <Link
             href="/"
-            className="mt-8 inline-flex rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+            className="btn-primary mt-8"
           >
             Continue shopping
           </Link>
@@ -91,7 +89,7 @@ export default function OrdersPage() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
-      <section className="mx-auto max-w-7xl px-6 py-10 sm:px-8 lg:px-10 lg:py-14">
+      <section className="page-shell">
         <div className="mb-10">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">
             My Orders
@@ -148,6 +146,11 @@ export default function OrdersPage() {
                       <p className="mt-2 text-sm font-medium text-slate-900">{order.customer.fullName}</p>
                     </div>
                   </div>
+                </div>
+
+                <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-5 text-sm text-slate-600">
+                  <span className="pill-meta">Email: {order.customer.email}</span>
+                  <span className="pill-meta">Items: {itemCount}</span>
                 </div>
               </article>
             );

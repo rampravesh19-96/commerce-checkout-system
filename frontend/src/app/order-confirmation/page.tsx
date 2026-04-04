@@ -46,9 +46,7 @@ export default function OrderConfirmationPage() {
     return (
       <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
         <section className="mx-auto max-w-4xl px-6 py-16 text-center sm:px-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">
-            Order Confirmation
-          </p>
+          <p className="page-eyebrow">Order Confirmation</p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">
             No recent order found
           </h1>
@@ -57,7 +55,7 @@ export default function OrderConfirmationPage() {
           </p>
           <Link
             href="/"
-            className="mt-8 inline-flex rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+            className="btn-primary mt-8"
           >
             Continue shopping
           </Link>
@@ -70,9 +68,7 @@ export default function OrderConfirmationPage() {
     return (
       <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
         <section className="mx-auto max-w-4xl px-6 py-16 text-center sm:px-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">
-            Order Confirmation
-          </p>
+          <p className="page-eyebrow">Order Confirmation</p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">
             Invalid confirmation data
           </h1>
@@ -81,7 +77,7 @@ export default function OrderConfirmationPage() {
           </p>
           <Link
             href="/"
-            className="mt-8 inline-flex rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+            className="btn-primary mt-8"
           >
             Continue shopping
           </Link>
@@ -92,11 +88,9 @@ export default function OrderConfirmationPage() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
-      <section className="mx-auto max-w-7xl px-6 py-10 sm:px-8 lg:px-10 lg:py-14">
+      <section className="page-shell">
         <div className="mb-10">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">
-            Order Confirmation
-          </p>
+          <p className="page-eyebrow">Order Confirmation</p>
           <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">
             Your mock order has been placed successfully
           </h1>
@@ -107,7 +101,7 @@ export default function OrderConfirmationPage() {
 
         <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
           <div className="space-y-6">
-            <section className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
+            <section className="surface-card p-8">
               <h2 className="text-xl font-semibold text-slate-900">Customer summary</h2>
               <div className="mt-5 space-y-2 text-sm leading-6 text-slate-700">
                 <p>{confirmation.customer.fullName}</p>
@@ -116,7 +110,7 @@ export default function OrderConfirmationPage() {
               </div>
             </section>
 
-            <section className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
+            <section className="surface-card p-8">
               <h2 className="text-xl font-semibold text-slate-900">Shipping address</h2>
               <div className="mt-5 space-y-2 text-sm leading-6 text-slate-700">
                 <p>{confirmation.shippingAddress.addressLine}</p>
@@ -127,7 +121,7 @@ export default function OrderConfirmationPage() {
               </div>
             </section>
 
-            <section className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
+            <section className="surface-card p-8">
               <h2 className="text-xl font-semibold text-slate-900">Ordered items</h2>
               {confirmation.coupon ? (
                 <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
@@ -158,7 +152,7 @@ export default function OrderConfirmationPage() {
             </section>
           </div>
 
-          <aside className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <aside className="surface-card p-6">
             <h2 className="text-lg font-semibold text-slate-900">Pricing summary</h2>
             <div className="mt-6 space-y-3">
               <div className="flex items-center justify-between text-sm text-slate-600">
@@ -184,7 +178,7 @@ export default function OrderConfirmationPage() {
             <Link
               href="/"
               onClick={handleContinueShopping}
-              className="mt-6 inline-flex w-full justify-center rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+              className="btn-primary mt-6 flex w-full"
             >
               Continue shopping
             </Link>
