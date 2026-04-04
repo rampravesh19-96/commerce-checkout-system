@@ -1,0 +1,164 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { formatPrice } from "@/lib/api";
+import {
+  clearOrderConfirmation,
+  getOrderConfirmation,
+  type OrderConfirmationData,
+} from "@/lib/order-confirmation";
+
+export default function OrderConfirmationPage() {
+  const [confirmation, setConfirmation] = useState<OrderConfirmationData | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    const data = getOrderConfirmation();
+    setConfirmation(data);
+    setIsHydatedSafe(setIsHydrated);
+  }, []);
+
+  const handleContinueShopping = () => {
+    clearOrderConfirmation();
+  };
+
+  if (!isHydrated) {
+    return (
+      <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
+        <section className="mx-auto max-w-7xl px-6 py-10 sm:px-8 lg:px-10 lg:py-14">
+          <div className="mb-8 h-10 w-64 animate-pulse rounded bg-slate-200" />
+          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="space-y-4 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-200" />
+              ))}
+            </div>
+            <div className="space-y-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="h-6 w-32 animate-pulse rounded bg-slate-200" />
+              <div className="h-20 animate-pulse rounded-2xl bg-slate-200" />
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (!confirmation) {
+    return (
+      <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
+        <section className="mx-auto max-w-4xl px-6 py-16 text-center sm:px-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">
+            Order Confirmation
+          </p>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">
+            No recent order found
+          </h1>
+          <p className="mt-4 text-base leading-7 text-slate-600">
+            Complete checkout to see your order confirmation details here.
+          </p>
+          <Link
+            href="/"
+            className="mt-8 inline-flex rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+          >
+            Continue shopping
+          </Link>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
+      <section className="mx-auto max-w-7xl px-6 py-10 sm:px-8 lg:px-10 lg:py-14">
+        <div className="mb-10">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-700">
+            Order Confirmation
+          </p>
+          <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">
+            Your mock order has been placed successfully
+          </h1>
+          <p className="mt-4 text-base leading-7 text-slate-600">
+            Order ID: <span className="font-semibold text-slate-900">{confirmation.orderId}</span>
+          </p>
+        </div>
+
+        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+          <div className="space-y-6">
+            <section className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
+              <h2 className="text-xl font-semibold text-slate-900">Customer summary</h2>
+              <div className="mt-5 space-y-2 text-sm leading-6 text-slate-700">
+                <p>{confirmation.customer.fullName}</p>
+                <p>{confirmation.customer.email}</p>
+                <p>{confirmation.customer.phone}</p>
+              </div>
+            </section>
+
+            <section className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
+              <h2 className="text-xl font-semibold text-slate-900">Shipping address</h2>
+              <div className="mt-5 space-y-2 text-sm leading-6 text-slate-700">
+                <p>{confirmation.shippingAddress.addressLine}</p>
+                <p>
+                  {confirmation.shippingAddress.city}, {confirmation.shippingAddress.state}
+                </p>
+                <p>{confirmation.shippingAddress.pincode}</p>
+              </div>
+            </section>
+
+            <section className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
+              <h2 className="text-xl font-semibold text-slate-900">Ordered items</h2>
+              <div className="mt-6 space-y-4">
+                {confirmation.items.map((item) => (
+                  <div
+                    key={item.productId}
+                    className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4"
+                  >
+                    <div>
+                      <p className="font-medium text-slate-900">{item.name}</p>
+                      <p className="mt-1 text-sm text-slate-600">
+                        Qty {item.quantity} x {formatPrice(item.unitPriceInPaise)}
+                      </p>
+                    </div>
+                    <p className="text-sm font-medium text-slate-900">
+                      {formatPrice(item.unitPriceInPaise * item.quantity)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+
+          <aside className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-900">Pricing summary</h2>
+            <div className="mt-6 space-y-3">
+              <div className="flex items-center justify-between text-sm text-slate-600">
+                <span>Item total</span>
+                <span>{formatPrice(confirmation.pricing.itemTotalInPaise)}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm text-slate-600">
+                <span>Delivery fee</span>
+                <span>{formatPrice(confirmation.pricing.deliveryFeeInPaise)}</span>
+              </div>
+              <div className="flex items-center justify-between border-t border-slate-200 pt-3 text-lg font-semibold text-slate-950">
+                <span>Grand total</span>
+                <span>{formatPrice(confirmation.pricing.grandTotalInPaise)}</span>
+              </div>
+            </div>
+
+            <Link
+              href="/"
+              onClick={handleContinueShopping}
+              className="mt-6 inline-flex w-full justify-center rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+            >
+              Continue shopping
+            </Link>
+          </aside>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function setIsHydatedSafe(setter: React.Dispatch<React.SetStateAction<boolean>>) {
+  setter(true);
+}

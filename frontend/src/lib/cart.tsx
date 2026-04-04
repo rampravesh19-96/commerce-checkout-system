@@ -34,6 +34,7 @@ type CartContextValue = {
   increaseQuantity: (productId: number) => void;
   decreaseQuantity: (productId: number) => void;
   removeItem: (productId: number) => void;
+  clearCart: () => void;
   totalItems: number;
   totalPriceInPaise: number;
 };
@@ -122,6 +123,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       );
     };
 
+    const clearCart = () => {
+      setCartItems([]);
+    };
+
     const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
     const totalPriceInPaise = cartItems.reduce(
       (sum, item) => sum + item.unitPriceInPaise * item.quantity,
@@ -135,6 +140,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       increaseQuantity,
       decreaseQuantity,
       removeItem,
+      clearCart,
       totalItems,
       totalPriceInPaise,
     };

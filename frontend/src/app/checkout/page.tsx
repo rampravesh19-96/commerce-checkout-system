@@ -1,11 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { formatPrice } from "@/lib/api";
 import { useCart } from "@/lib/cart";
-
-const DELIVERY_FEE_IN_PAISE = 9900;
+import {
+  DELIVERY_FEE_IN_PAISE,
+  generateMockOrderId,
+  saveOrderConfirmation,
+} from "@/lib/order-confirmation";
 
 type CheckoutForm = {
   fullName: string;
@@ -70,10 +74,10 @@ function validateForm(form: CheckoutForm) {
 }
 
 export default function CheckoutPage() {
-  const { cartItems, isHydrated, totalItems, totalPriceInPaise } = useCart();
+  const router = useRouter();
+  const { cartItems, clearCart, isHydrated, totalItems, totalPriceInPaise } = useCart();
   const [form, setForm] = useState<CheckoutForm>(initialFormState);
   const [errors, setErrors] = useState<CheckoutErrors>({});
-  const [isOrderPlaced, setIsOrderPlaced] = useState(false);
 
   const grandTotalInPaise = useMemo(
     () => totalPriceInPaise + DELIVERY_FEE_IN_PAISE,
@@ -102,12 +106,35 @@ export default function CheckoutPage() {
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      setIsOrderPlaced(false);
       return;
     }
 
+    const orderConfirmation = {
+      orderId: generateMockOrderId(),
+      createdAt: new Date().toISOString(),
+      customer: {
+        fullName: form.fullName.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+      },
+      shippingAddress: {
+        addressLine: form.addressLine.trim(),
+        city: form.city.trim(),
+        state: form.state.trim(),
+        pincode: form.pincode.trim(),
+      },
+      items: cartItems,
+      pricing: {
+        itemTotalInPaise: totalPriceInPaise,
+        deliveryFeeInPaise: DELIVERY_FEE_IN_PAISE,
+        grandTotalInPaise,
+      },
+    };
+
+    saveOrderConfirmation(orderConfirmation);
+    clearCart();
     setErrors({});
-    setIsOrderPlaced(true);
+    router.push("/order-confirmation");
   };
 
   if (!isHydrated) {
@@ -332,15 +359,6 @@ export default function CheckoutPage() {
                 Back to cart
               </Link>
             </div>
-
-            {isOrderPlaced ? (
-              <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                <p className="text-sm font-medium text-emerald-800">
-                  Order placed successfully. This is a mock confirmation for the current
-                  checkout milestone.
-                </p>
-              </div>
-            ) : null}
           </form>
 
           <aside className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
