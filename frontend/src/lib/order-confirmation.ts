@@ -2,6 +2,7 @@ import { CartItem } from "@/lib/cart";
 import { AppliedCoupon } from "@/lib/pricing";
 
 const ORDER_CONFIRMATION_STORAGE_KEY = "commerce-checkout-order-confirmation";
+const ORDER_HISTORY_STORAGE_KEY = "commerce-checkout-order-history";
 
 export type ConfirmationCustomer = {
   fullName: string;
@@ -19,6 +20,11 @@ export type ConfirmationShippingAddress = {
 export type OrderConfirmationData = {
   orderId: string;
   createdAt: string;
+  status: "Confirmed";
+  user: {
+    email: string;
+    name: string;
+  };
   customer: ConfirmationCustomer;
   shippingAddress: ConfirmationShippingAddress;
   coupon: AppliedCoupon | null;
@@ -39,6 +45,12 @@ export function saveOrderConfirmation(data: OrderConfirmationData) {
   window.sessionStorage.setItem(ORDER_CONFIRMATION_STORAGE_KEY, JSON.stringify(data));
 }
 
+export function saveOrderToHistory(data: OrderConfirmationData) {
+  const currentOrders = getOrderHistory();
+  const nextOrders = [data, ...currentOrders];
+  window.localStorage.setItem(ORDER_HISTORY_STORAGE_KEY, JSON.stringify(nextOrders));
+}
+
 export function getOrderConfirmation() {
   const rawValue = window.sessionStorage.getItem(ORDER_CONFIRMATION_STORAGE_KEY);
 
@@ -56,4 +68,19 @@ export function getOrderConfirmation() {
 
 export function clearOrderConfirmation() {
   window.sessionStorage.removeItem(ORDER_CONFIRMATION_STORAGE_KEY);
+}
+
+export function getOrderHistory() {
+  const rawValue = window.localStorage.getItem(ORDER_HISTORY_STORAGE_KEY);
+
+  if (!rawValue) {
+    return [] as OrderConfirmationData[];
+  }
+
+  try {
+    return JSON.parse(rawValue) as OrderConfirmationData[];
+  } catch {
+    window.localStorage.removeItem(ORDER_HISTORY_STORAGE_KEY);
+    return [] as OrderConfirmationData[];
+  }
 }

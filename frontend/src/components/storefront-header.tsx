@@ -28,6 +28,12 @@ export function StorefrontHeader() {
         <nav className="flex items-center gap-3">
           {isAuthHydrated && user ? (
             <>
+              <Link
+                href="/orders"
+                className="hidden items-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:text-slate-900 sm:inline-flex"
+              >
+                Orders
+              </Link>
               <span className="hidden text-sm text-slate-600 sm:inline">
                 Hi, <span className="font-medium text-slate-900">{user.name}</span>
               </span>

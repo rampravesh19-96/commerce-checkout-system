@@ -9,6 +9,7 @@ import { useCart } from "@/lib/cart";
 import {
   generateMockOrderId,
   saveOrderConfirmation,
+  saveOrderToHistory,
 } from "@/lib/order-confirmation";
 
 type CheckoutForm = {
@@ -132,6 +133,11 @@ export default function CheckoutPage() {
     const orderConfirmation = {
       orderId: generateMockOrderId(),
       createdAt: new Date().toISOString(),
+      status: "Confirmed" as const,
+      user: {
+        email: user.email,
+        name: user.name,
+      },
       customer: {
         fullName: form.fullName.trim(),
         email: form.email.trim(),
@@ -154,6 +160,7 @@ export default function CheckoutPage() {
     };
 
     saveOrderConfirmation(orderConfirmation);
+    saveOrderToHistory(orderConfirmation);
     clearCart();
     setErrors({});
     router.push("/order-confirmation");
