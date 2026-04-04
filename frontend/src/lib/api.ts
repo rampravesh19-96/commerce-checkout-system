@@ -43,6 +43,17 @@ export type ProductsResponse = {
   };
 };
 
+export type AuthUser = {
+  id: number;
+  name: string;
+  email: string;
+};
+
+export type AuthResponse = {
+  user: AuthUser;
+  token: string;
+};
+
 export type ProductSortOption = "newest" | "price_asc" | "price_desc" | "name_asc";
 
 type GetProductsParams = {
@@ -76,6 +87,33 @@ async function fetchJson<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+async function postJson<T>(path: string, body: unknown): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    let message = `Request failed with status ${response.status}`;
+
+    try {
+      const errorData = (await response.json()) as { message?: string };
+      if (errorData.message) {
+        message = errorData.message;
+      }
+    } catch {
+      // Ignore malformed error bodies and fall back to status-based message.
+    }
+
+    throw new ApiError(message, response.status);
+  }
+
+  return response.json() as Promise<T>;
+}
+
 export function getCategories() {
   return fetchJson<Category[]>("/categories");
 }
@@ -102,6 +140,14 @@ export function getProducts(options: GetProductsParams = {}) {
 
 export function getProductById(productId: number) {
   return fetchJson<Product>(`/products/${productId}`);
+}
+
+export function signupUser(input: { name: string; email: string; password: string }) {
+  return postJson<AuthResponse>("/auth/signup", input);
+}
+
+export function loginUser(input: { email: string; password: string }) {
+  return postJson<AuthResponse>("/auth/login", input);
 }
 
 export function formatPrice(priceInPaise: number) {

@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import productRouter from "./routes/product.routes";
 import categoryRouter from "./routes/category.routes";
+import authRouter from "./routes/auth.routes";
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ app.get("/health", (_req, res) => {
 
 app.use("/products", productRouter);
 app.use("/categories", categoryRouter);
+app.use("/auth", authRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
