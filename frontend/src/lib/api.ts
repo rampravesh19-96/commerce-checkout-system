@@ -29,6 +29,7 @@ export type Product = {
     id: number;
     name: string;
     slug: string;
+    description?: string | null;
   };
 };
 
@@ -45,13 +46,23 @@ export type ProductsResponse = {
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") || "http://localhost:5000";
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 async function fetchJson<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     cache: "no-store",
   });
 
   if (!response.ok) {
-    throw new Error(`Request failed with status ${response.status}`);
+    throw new ApiError(`Request failed with status ${response.status}`, response.status);
   }
 
   return response.json() as Promise<T>;
@@ -71,6 +82,10 @@ export function getProducts(categorySlug?: string) {
   const query = params.toString();
 
   return fetchJson<ProductsResponse>(`/products${query ? `?${query}` : ""}`);
+}
+
+export function getProductById(productId: number) {
+  return fetchJson<Product>(`/products/${productId}`);
 }
 
 export function formatPrice(priceInPaise: number) {
