@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { ApiError, Product, formatPrice, getProductById } from "@/lib/api";
+import { useCart } from "@/lib/cart";
 
 function getStockLabel(stock: number) {
   if (stock <= 0) {
@@ -29,11 +30,13 @@ function getStockLabel(stock: number) {
 
 export default function ProductDetailsPage() {
   const params = useParams<{ id: string }>();
+  const { addItem } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isNotFound, setIsNotFound] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [retryCount, setRetryCount] = useState(0);
+  const [isAddedToCart, setIsAddedToCart] = useState(false);
   const productId = useMemo(() => Number(params.id), [params.id]);
 
   useEffect(() => {
@@ -149,6 +152,21 @@ export default function ProductDetailsPage() {
   }
 
   const stockStatus = getStockLabel(product.stock);
+  const canAddToCart = product.stock > 0;
+
+  const handleAddToCart = () => {
+    if (!canAddToCart) {
+      return;
+    }
+
+    addItem({
+      productId: product.id,
+      name: product.name,
+      imageUrl: product.thumbnailUrl,
+      unitPriceInPaise: product.priceInPaise,
+    });
+    setIsAddedToCart(true);
+  };
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.16),_transparent_32%),linear-gradient(180deg,_#fffdf8_0%,_#f8fafc_45%,_#f1f5f9_100%)] text-slate-900">
@@ -195,6 +213,33 @@ export default function ProductDetailsPage() {
             <p className="mt-6 text-3xl font-semibold text-slate-950">
               {formatPrice(product.priceInPaise)}
             </p>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={!canAddToCart}
+                className={`rounded-full px-5 py-3 text-sm font-medium transition ${
+                  canAddToCart
+                    ? "bg-slate-900 text-white hover:bg-slate-800"
+                    : "cursor-not-allowed bg-slate-300 text-slate-600"
+                }`}
+              >
+                Add to cart
+              </button>
+              <Link
+                href="/cart"
+                className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400"
+              >
+                View cart
+              </Link>
+            </div>
+
+            {isAddedToCart ? (
+              <p className="mt-3 text-sm font-medium text-emerald-700">
+                Added to cart successfully.
+              </p>
+            ) : null}
 
             <div className="mt-8 rounded-2xl bg-slate-50 p-5">
               <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
