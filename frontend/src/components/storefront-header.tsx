@@ -34,6 +34,12 @@ export function StorefrontHeader() {
               >
                 Orders
               </Link>
+              <Link
+                href="/ops/orders"
+                className="hidden items-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:text-slate-900 lg:inline-flex"
+              >
+                Ops
+              </Link>
               <span className="hidden text-sm text-slate-600 sm:inline">
                 Hi, <span className="font-medium text-slate-900">{user.name}</span>
               </span>

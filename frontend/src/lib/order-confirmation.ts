@@ -4,6 +4,15 @@ import { AppliedCoupon } from "@/lib/pricing";
 const ORDER_CONFIRMATION_STORAGE_KEY = "commerce-checkout-order-confirmation";
 const ORDER_HISTORY_STORAGE_KEY = "commerce-checkout-order-history";
 
+export const ORDER_STATUSES = [
+  "Confirmed",
+  "Packed",
+  "Shipped",
+  "Delivered",
+] as const;
+
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
 export type ConfirmationCustomer = {
   fullName: string;
   email: string;
@@ -20,7 +29,7 @@ export type ConfirmationShippingAddress = {
 export type OrderConfirmationData = {
   orderId: string;
   createdAt: string;
-  status: "Confirmed";
+  status: OrderStatus;
   user: {
     email: string;
     name: string;
@@ -83,4 +92,23 @@ export function getOrderHistory() {
     window.localStorage.removeItem(ORDER_HISTORY_STORAGE_KEY);
     return [] as OrderConfirmationData[];
   }
+}
+
+export function updateOrderStatus(orderId: string, status: OrderStatus) {
+  const currentOrders = getOrderHistory();
+  const nextOrders = currentOrders.map((order) =>
+    order.orderId === orderId ? { ...order, status } : order,
+  );
+
+  window.localStorage.setItem(ORDER_HISTORY_STORAGE_KEY, JSON.stringify(nextOrders));
+
+  const currentConfirmation = getOrderConfirmation();
+  if (currentConfirmation?.orderId === orderId) {
+    saveOrderConfirmation({
+      ...currentConfirmation,
+      status,
+    });
+  }
+
+  return nextOrders;
 }
