@@ -26,6 +26,14 @@ export type ConfirmationShippingAddress = {
   pincode: string;
 };
 
+export type ConfirmationPayment = {
+  provider: "Razorpay";
+  mode: "test";
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  verifiedAt: string;
+};
+
 export type OrderConfirmationData = {
   orderId: string;
   createdAt: string;
@@ -44,6 +52,7 @@ export type OrderConfirmationData = {
     deliveryFeeInPaise: number;
     grandTotalInPaise: number;
   };
+  payment?: ConfirmationPayment;
 };
 
 export function generateMockOrderId() {

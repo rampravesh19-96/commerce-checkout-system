@@ -21,6 +21,7 @@ This project is designed as a strong portfolio piece for **frontend-focused full
 - JWT authentication
 - Zod validation
 - bcryptjs password hashing
+- Razorpay sandbox order + signature verification
 
 ## Core Features
 
@@ -55,7 +56,9 @@ This project is designed as a strong portfolio piece for **frontend-focused full
 - Return to checkout after login
 - Prefilled logged-in user name and email
 - Shipping form validation
-- Mock order placement
+- Razorpay sandbox payment before confirmation
+- Backend payment signature verification
+- Mock order placement after successful payment verification
 - Dedicated order confirmation page
 - Protected My Orders page with browser-stored mock order history
 
@@ -95,6 +98,8 @@ This project is designed as a strong portfolio piece for **frontend-focused full
 - `GET /products/:id`
 - `POST /auth/signup`
 - `POST /auth/login`
+- `POST /payments/create-order`
+- `POST /payments/verify`
 
 ## Screenshots
 
@@ -113,3 +118,27 @@ This project is designed as a strong portfolio piece for **frontend-focused full
 ```bash
 git clone https://github.com/rampravesh19-96/commerce-checkout-system.git
 cd commerce-checkout-system
+```
+
+### 2. Configure environment variables
+
+Backend (`backend/.env`)
+```bash
+PORT=5000
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=commerce_checkout
+JWT_SECRET=dev-jwt-secret
+RAZORPAY_KEY_ID=rzp_test_your_key_id
+RAZORPAY_KEY_SECRET=your_test_key_secret
+```
+
+Frontend (`frontend/.env.local`)
+```bash
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
+NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_your_key_id
+```
+
+Use Razorpay test keys only for this project milestone.

@@ -54,6 +54,22 @@ export type AuthResponse = {
   token: string;
 };
 
+export type RazorpayOrderResponse = {
+  id: string;
+  amount: number;
+  currency: string;
+  receipt: string;
+  keyId: string;
+  mode: "test";
+};
+
+export type RazorpayVerificationResponse = {
+  verified: true;
+  paymentId: string;
+  orderId: string;
+  mode: "test";
+};
+
 export type ProductSortOption = "newest" | "price_asc" | "price_desc" | "name_asc";
 
 type GetProductsParams = {
@@ -148,6 +164,18 @@ export function signupUser(input: { name: string; email: string; password: strin
 
 export function loginUser(input: { email: string; password: string }) {
   return postJson<AuthResponse>("/auth/login", input);
+}
+
+export function createRazorpayOrder(input: { amountInPaise: number; receipt: string }) {
+  return postJson<RazorpayOrderResponse>("/payments/create-order", input);
+}
+
+export function verifyRazorpayPayment(input: {
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+}) {
+  return postJson<RazorpayVerificationResponse>("/payments/verify", input);
 }
 
 export function formatPrice(priceInPaise: number) {

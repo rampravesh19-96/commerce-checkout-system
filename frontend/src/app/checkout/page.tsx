@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
-import { formatPrice } from "@/lib/api";
+import {
+  ApiError,
+  createRazorpayOrder,
+  formatPrice,
+  verifyRazorpayPayment,
+} from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useCart } from "@/lib/cart";
 import {
@@ -23,6 +28,7 @@ type CheckoutForm = {
 };
 
 type CheckoutErrors = Partial<Record<keyof CheckoutForm, string>>;
+type PaymentStage = "idle" | "creating-order" | "awaiting-payment" | "verifying";
 
 const initialFormState: CheckoutForm = {
   fullName: "",
@@ -33,6 +39,9 @@ const initialFormState: CheckoutForm = {
   state: "",
   pincode: "",
 };
+
+const RAZORPAY_CHECKOUT_SCRIPT_ID = "razorpay-checkout-script";
+const RAZORPAY_CHECKOUT_SRC = "https://checkout.razorpay.com/v1/checkout.js";
 
 function validateForm(form: CheckoutForm) {
   const errors: CheckoutErrors = {};
@@ -74,6 +83,62 @@ function validateForm(form: CheckoutForm) {
   return errors;
 }
 
+function loadRazorpayCheckoutScript() {
+  if (typeof window === "undefined") {
+    return Promise.resolve(false);
+  }
+
+  if (window.Razorpay) {
+    return Promise.resolve(true);
+  }
+
+  const existingScript = document.getElementById(RAZORPAY_CHECKOUT_SCRIPT_ID) as
+    | HTMLScriptElement
+    | null;
+
+  if (existingScript) {
+    return new Promise<boolean>((resolve) => {
+      existingScript.addEventListener("load", () => resolve(true), { once: true });
+      existingScript.addEventListener("error", () => resolve(false), { once: true });
+    });
+  }
+
+  return new Promise<boolean>((resolve) => {
+    const script = document.createElement("script");
+    script.id = RAZORPAY_CHECKOUT_SCRIPT_ID;
+    script.src = RAZORPAY_CHECKOUT_SRC;
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
+function getPaymentCtaLabel(stage: PaymentStage) {
+  switch (stage) {
+    case "creating-order":
+      return "Preparing payment...";
+    case "awaiting-payment":
+      return "Waiting for payment...";
+    case "verifying":
+      return "Verifying payment...";
+    default:
+      return "Pay with Razorpay";
+  }
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof ApiError) {
+    return error.message;
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Something went wrong while starting payment. Please try again.";
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { isHydrated: isAuthHydrated, user } = useAuth();
@@ -96,6 +161,8 @@ export default function CheckoutPage() {
   const [errors, setErrors] = useState<CheckoutErrors>({});
   const [hasEditedFullName, setHasEditedFullName] = useState(false);
   const [hasEditedEmail, setHasEditedEmail] = useState(false);
+  const [paymentStage, setPaymentStage] = useState<PaymentStage>("idle");
+  const [paymentFeedback, setPaymentFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthHydrated) {
@@ -130,14 +197,14 @@ export default function CheckoutPage() {
       }));
     };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-const formToSubmit: CheckoutForm = {
-  ...form,
-  fullName: hasEditedFullName ? form.fullName : user?.name ?? form.fullName,
-  email: hasEditedEmail ? form.email : user?.email ?? form.email,
-};
+    const formToSubmit: CheckoutForm = {
+      ...form,
+      fullName: hasEditedFullName ? form.fullName : user?.name ?? form.fullName,
+      email: hasEditedEmail ? form.email : user?.email ?? form.email,
+    };
 
     const validationErrors = validateForm(formToSubmit);
 
@@ -146,40 +213,153 @@ const formToSubmit: CheckoutForm = {
       return;
     }
 
-    const orderConfirmation = {
-      orderId: generateMockOrderId(),
-      createdAt: new Date().toISOString(),
-      status: "Confirmed" as const,
-      user: {
-        email: user?.email ?? formToSubmit.email,
-        name: user?.name ?? formToSubmit.fullName,
-      },
-      customer: {
-        fullName: formToSubmit.fullName.trim(),
-        email: formToSubmit.email.trim(),
-        phone: formToSubmit.phone.trim(),
-      },
-      shippingAddress: {
-        addressLine: formToSubmit.addressLine.trim(),
-        city: formToSubmit.city.trim(),
-        state: formToSubmit.state.trim(),
-        pincode: formToSubmit.pincode.trim(),
-      },
-      coupon: appliedCoupon,
-      items: cartItems,
-      pricing: {
-        itemTotalInPaise: totalPriceInPaise,
-        discountInPaise,
-        deliveryFeeInPaise,
-        grandTotalInPaise,
-      },
-    };
+    if (!grandTotalInPaise || grandTotalInPaise <= 0) {
+      setPaymentFeedback("Your cart total is invalid. Please review the cart and try again.");
+      return;
+    }
 
-    saveOrderConfirmation(orderConfirmation);
-    saveOrderToHistory(orderConfirmation);
-    clearCart();
+    const checkoutScriptLoaded = await loadRazorpayCheckoutScript();
+
+    if (!checkoutScriptLoaded || !window.Razorpay) {
+      setPaymentFeedback("Unable to load Razorpay Checkout right now. Please refresh and try again.");
+      return;
+    }
+
     setErrors({});
-    router.push("/order-confirmation");
+    setPaymentFeedback(null);
+    setPaymentStage("creating-order");
+
+    const appOrderId = generateMockOrderId();
+    const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+
+    if (!razorpayKeyId) {
+      setPaymentStage("idle");
+      setPaymentFeedback("Razorpay test key is missing on the frontend environment.");
+      return;
+    }
+
+    try {
+      const razorpayOrder = await createRazorpayOrder({
+        amountInPaise: grandTotalInPaise,
+        receipt: appOrderId,
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        const razorpay = new window.Razorpay({
+          key: razorpayKeyId || razorpayOrder.keyId,
+          amount: razorpayOrder.amount,
+          currency: razorpayOrder.currency,
+          name: "Commerce Checkout System",
+          description: "Test payment for demo checkout",
+          order_id: razorpayOrder.id,
+          prefill: {
+            name: formToSubmit.fullName.trim(),
+            email: formToSubmit.email.trim(),
+            contact: formToSubmit.phone.trim(),
+          },
+          readonly: {
+            email: Boolean(formToSubmit.email.trim()),
+            name: Boolean(formToSubmit.fullName.trim()),
+          },
+          notes: {
+            mode: "test",
+            appOrderId,
+          },
+          theme: {
+            color: "#0f172a",
+          },
+          modal: {
+            ondismiss: () => {
+              setPaymentStage("idle");
+              setPaymentFeedback(
+                "Payment was cancelled. Your cart is still intact and you can try again anytime.",
+              );
+              reject(new Error("Payment cancelled"));
+            },
+          },
+          handler: async (response) => {
+            try {
+              setPaymentStage("verifying");
+
+              const verification = await verifyRazorpayPayment({
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+              });
+
+              const orderConfirmation = {
+                orderId: appOrderId,
+                createdAt: new Date().toISOString(),
+                status: "Confirmed" as const,
+                user: {
+                  email: user?.email ?? formToSubmit.email,
+                  name: user?.name ?? formToSubmit.fullName,
+                },
+                customer: {
+                  fullName: formToSubmit.fullName.trim(),
+                  email: formToSubmit.email.trim(),
+                  phone: formToSubmit.phone.trim(),
+                },
+                shippingAddress: {
+                  addressLine: formToSubmit.addressLine.trim(),
+                  city: formToSubmit.city.trim(),
+                  state: formToSubmit.state.trim(),
+                  pincode: formToSubmit.pincode.trim(),
+                },
+                coupon: appliedCoupon,
+                items: cartItems,
+                pricing: {
+                  itemTotalInPaise: totalPriceInPaise,
+                  discountInPaise,
+                  deliveryFeeInPaise,
+                  grandTotalInPaise,
+                },
+                payment: {
+                  provider: "Razorpay" as const,
+                  mode: verification.mode,
+                  razorpayOrderId: verification.orderId,
+                  razorpayPaymentId: verification.paymentId,
+                  verifiedAt: new Date().toISOString(),
+                },
+              };
+
+              saveOrderConfirmation(orderConfirmation);
+              saveOrderToHistory(orderConfirmation);
+              clearCart();
+              setPaymentFeedback(null);
+              resolve();
+              router.push("/order-confirmation");
+            } catch (error) {
+              setPaymentStage("idle");
+              setPaymentFeedback(
+                getErrorMessage(error) ||
+                  "Payment completed but verification failed. Please contact support for the demo.",
+              );
+              reject(error instanceof Error ? error : new Error("Payment verification failed"));
+            }
+          },
+        });
+
+        razorpay.on("payment.failed", (response) => {
+          setPaymentStage("idle");
+          setPaymentFeedback(
+            response.error.description ||
+              "Payment failed in test mode. Your cart is intact and you can retry.",
+          );
+          reject(new Error(response.error.description || "Payment failed"));
+        });
+
+        setPaymentStage("awaiting-payment");
+        razorpay.open();
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message === "Payment cancelled") {
+        return;
+      }
+
+      setPaymentStage("idle");
+      setPaymentFeedback(getErrorMessage(error));
+    }
   };
 
   if (!isHydrated || !isAuthHydrated) {
@@ -211,6 +391,7 @@ const formToSubmit: CheckoutForm = {
 
   const displayFullName = hasEditedFullName ? form.fullName : user.name;
   const displayEmail = hasEditedEmail ? form.email : user.email;
+  const isProcessingPayment = paymentStage !== "idle";
 
   if (cartItems.length === 0) {
     return (
@@ -224,16 +405,10 @@ const formToSubmit: CheckoutForm = {
             Add products to your cart before continuing to checkout.
           </p>
           <div className="mt-8 flex justify-center gap-3">
-            <Link
-              href="/"
-              className="btn-primary"
-            >
+            <Link href="/" className="btn-primary">
               Browse catalog
             </Link>
-            <Link
-              href="/cart"
-              className="btn-secondary"
-            >
+            <Link href="/cart" className="btn-secondary">
               Go to cart
             </Link>
           </div>
@@ -251,7 +426,7 @@ const formToSubmit: CheckoutForm = {
               Checkout
             </p>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">
-              Shipping details and order summary
+              Shipping details and secure test payment
             </h1>
           </div>
           <p className="text-sm text-slate-600">
@@ -267,10 +442,16 @@ const formToSubmit: CheckoutForm = {
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-slate-900">Shipping address</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Fill in the delivery details for this mock checkout flow. Your account
-                name and email are prefilled for convenience.
+                Fill in the delivery details, then continue to Razorpay Checkout in test mode.
+                Your order is confirmed only after backend payment verification succeeds.
               </p>
             </div>
+
+            {paymentFeedback ? (
+              <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                {paymentFeedback}
+              </div>
+            ) : null}
 
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="sm:col-span-2">
@@ -284,6 +465,7 @@ const formToSubmit: CheckoutForm = {
                   onChange={handleChange("fullName")}
                   className="input-field"
                   placeholder="Aarav Sharma"
+                  disabled={isProcessingPayment}
                 />
                 {errors.fullName ? (
                   <p className="mt-2 text-sm text-red-600">{errors.fullName}</p>
@@ -301,10 +483,9 @@ const formToSubmit: CheckoutForm = {
                   onChange={handleChange("email")}
                   className="input-field"
                   placeholder="aarav@example.com"
+                  disabled={isProcessingPayment}
                 />
-                {errors.email ? (
-                  <p className="mt-2 text-sm text-red-600">{errors.email}</p>
-                ) : null}
+                {errors.email ? <p className="mt-2 text-sm text-red-600">{errors.email}</p> : null}
               </div>
 
               <div>
@@ -318,10 +499,9 @@ const formToSubmit: CheckoutForm = {
                   onChange={handleChange("phone")}
                   className="input-field"
                   placeholder="9876543210"
+                  disabled={isProcessingPayment}
                 />
-                {errors.phone ? (
-                  <p className="mt-2 text-sm text-red-600">{errors.phone}</p>
-                ) : null}
+                {errors.phone ? <p className="mt-2 text-sm text-red-600">{errors.phone}</p> : null}
               </div>
 
               <div className="sm:col-span-2">
@@ -338,6 +518,7 @@ const formToSubmit: CheckoutForm = {
                   rows={4}
                   className="textarea-field"
                   placeholder="Flat 12B, Park View Residency, MG Road"
+                  disabled={isProcessingPayment}
                 />
                 {errors.addressLine ? (
                   <p className="mt-2 text-sm text-red-600">{errors.addressLine}</p>
@@ -355,10 +536,9 @@ const formToSubmit: CheckoutForm = {
                   onChange={handleChange("city")}
                   className="input-field"
                   placeholder="Bengaluru"
+                  disabled={isProcessingPayment}
                 />
-                {errors.city ? (
-                  <p className="mt-2 text-sm text-red-600">{errors.city}</p>
-                ) : null}
+                {errors.city ? <p className="mt-2 text-sm text-red-600">{errors.city}</p> : null}
               </div>
 
               <div>
@@ -372,10 +552,9 @@ const formToSubmit: CheckoutForm = {
                   onChange={handleChange("state")}
                   className="input-field"
                   placeholder="Karnataka"
+                  disabled={isProcessingPayment}
                 />
-                {errors.state ? (
-                  <p className="mt-2 text-sm text-red-600">{errors.state}</p>
-                ) : null}
+                {errors.state ? <p className="mt-2 text-sm text-red-600">{errors.state}</p> : null}
               </div>
 
               <div className="sm:col-span-2">
@@ -389,6 +568,7 @@ const formToSubmit: CheckoutForm = {
                   onChange={handleChange("pincode")}
                   className="input-field"
                   placeholder="560001"
+                  disabled={isProcessingPayment}
                 />
                 {errors.pincode ? (
                   <p className="mt-2 text-sm text-red-600">{errors.pincode}</p>
@@ -397,15 +577,13 @@ const formToSubmit: CheckoutForm = {
             </div>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <button
-                type="submit"
-                className="btn-primary"
-              >
-                Place Order
+              <button type="submit" className="btn-primary" disabled={isProcessingPayment}>
+                {getPaymentCtaLabel(paymentStage)}
               </button>
               <Link
                 href="/cart"
-                className="btn-secondary"
+                className={`btn-secondary ${isProcessingPayment ? "pointer-events-none opacity-60" : ""}`}
+                aria-disabled={isProcessingPayment}
               >
                 Back to cart
               </Link>
@@ -414,6 +592,19 @@ const formToSubmit: CheckoutForm = {
 
           <aside className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">Order summary</h2>
+
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Payment mode
+              </p>
+              <p className="mt-2 text-sm font-medium text-slate-900">
+                Razorpay sandbox only
+              </p>
+              <p className="mt-1 text-xs leading-5 text-slate-600">
+                This milestone uses Razorpay test mode. The order is confirmed only after signature
+                verification on the backend.
+              </p>
+            </div>
 
             <div className="mt-6 space-y-4">
               {cartItems.map((item) => (
